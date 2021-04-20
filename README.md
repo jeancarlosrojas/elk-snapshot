@@ -17,6 +17,7 @@ $ helm install kibana elastic/kibana -f elasticsearch-kibana/values.yaml
 ```
 
 
+```json
 PUT /_ingest/pipeline/test
   {
     "description" : "Pipeline Log A",
@@ -71,5 +72,8 @@ PUT /_ingest/pipeline/test
     ]
   }
 
+```
 
+```sh
 $ helm install elastic-filebeat elastic/filebeat -f elasticsearch-filebeat/values.yaml
+```
