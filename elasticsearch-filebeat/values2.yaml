@@ -1,0 +1,57 @@
+---
+imageTag: "7.12.0"
+filebeatConfig:
+  filebeat.yml: |
+    filebeat.inputs:
+    - type: log
+      enabled: true
+      paths:
+        - /usr/share/filebeat/logs/log-generator*.log
+      tags: [ test ]
+      multiline.pattern: ^(DEBUG|INFO|ERROR|TRACE|FATAL).*
+      multiline.negate: true
+      multiline.match: after
+    setup:
+      ilm:
+        enabled: true
+        pattern: "{now/d}-000001"
+        policy_name: filebeat-log
+        overwrite: true
+        rollover_alias: filebeat-log
+      template:
+        overwrite: true
+        name: filebeat-log
+        pattern: filebeat-log-*
+        type: index
+        settings:
+          index.mapping.ignore_malformed: true
+    output.elasticsearch:
+      host: '${NODE_NAME}'
+      hosts: '${ELASTICSEARCH_HOSTS:elasticsearch-master:9200}'
+      pipelines:
+        - pipeline: test
+          when.contains:
+            tags: "test"
+
+# Permit co-located instances for solitary minikube virtual machines.
+antiAffinity: "soft"
+
+# Shrink default JVM heap.
+esJavaOpts: "-Xmx128m -Xms128m"
+
+# Allocate smaller chunks of memory per pod.
+resources:
+  requests:
+    cpu: "100m"
+    memory: "512M"
+  limits:
+    cpu: "1000m"
+    memory: "512M"
+
+# Request smaller persistent volumes.
+volumeClaimTemplate:
+  accessModes: [ "ReadWriteOnce" ]
+  storageClassName: "standard"
+  resources:
+    requests:
+      storage: 100M

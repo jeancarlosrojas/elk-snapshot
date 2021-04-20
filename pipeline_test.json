@@ -1,0 +1,52 @@
+{
+  "description" : "Pipeline Log A",
+  "processors" : [
+    {
+      "grok" : {
+        "field" : "message",
+        "patterns" : [
+          """\A%{WORD:level} %{TIMESTAMP_ISO8601:timestamp} \[%{WORD:thread}\] %{JAVACLASS:class} - %{WORD:type}\|%{NUMBER:duration}\|%{DATA:action}\|%{WORD:status}\|%{USERNAME:username}""",
+          """\A%{WORD:level} %{TIMESTAMP_ISO8601:timestamp} \[%{WORD:thread}\] %{JAVACLASS:class} - %{WORD:type}\|%{NUMBER:status}\|%{USERNAME:username}\|%{IPV4:ip}""",
+          """\A(?m)%{WORD:level} %{TIMESTAMP_ISO8601:timestamp} \[%{WORD:thread}\] %{JAVACLASS:class} - %{DATA:description}\|%{GREEDYDATA:stacktrace}""",
+          """\A%{WORD:level} %{TIMESTAMP_ISO8601:timestamp} \[%{WORD:thread}\] %{JAVACLASS:class} - %{GREEDYDATA:description}"""
+        ],
+        "tag" : "test_logs"
+      }
+    },
+    {
+      "date" : {
+        "field" : "timestamp",
+        "formats" : [
+          "yyyy-MM-dd HH:mm:ss"
+        ],
+        "timezone" : "Europe/Madrid",
+        "tag" : "test_timestamp"
+      }
+    },{
+      "remove": {
+        "field": ["input"]
+      }
+    },
+    {
+      "convert": {
+        "field": "duration",
+        "type": "integer",
+        "if": "ctx.level == 'PERFORMANCE'"
+      }
+    }
+  ],
+  "on_failure" : [
+    {
+      "set" : {
+        "field" : "_index",
+        "value" : "failed-{{ _index }}"
+      }
+    },
+    {
+      "set" : {
+        "field" : "error",
+        "value" : "{{ _ingest.on_failure_message }}"
+      }
+    }
+  ]
+}
